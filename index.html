@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Annie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#3F1626;
+    --paper:#FBF1E6;
+    --paper-warm:#F4E2D3;
+    --rose:#C98298;
+    --rose-deep:#A85770;
+    --gold:#C9A227;
+    --night:#1E0F18;
+    --night-soft:#2B1620;
+    --line:#E3CBB8;
+
+    --font-display:'Cormorant Garamond', serif;
+    --font-script:'Caveat', cursive;
+    --font-body:'Work Sans', sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--night);
+    font-family:var(--font-body);
+    color:var(--ink);
+    overflow:hidden;
+  }
+  button{ font-family:inherit; cursor:pointer; }
+  ::selection{ background:var(--rose); color:#fff; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  /* ---------- screen scaffolding ---------- */
+  .stage{ position:relative; width:100%; height:100vh; }
+  .screen{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; visibility:hidden; pointer-events:none;
+    transition:opacity .7s ease;
+    padding:24px; overflow:hidden;
+  }
+  .screen.active{ opacity:1; visibility:visible; pointer-events:auto; }
+  .screen-exit{ opacity:0 !important; transition:opacity .6s ease; }
+
+  .rise{ animation:rise .8s ease both; position:relative; z-index:2; }
+  @keyframes rise{
+    from{ opacity:0; transform:translateY(16px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* ---------- decorative emoji backdrop ---------- */
+  .emoji-field{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1;
+  }
+  .emoji-bit{
+    position:absolute; line-height:1;
+    animation:floaty 5.5s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-16px) rotate(10deg); }
+  }
+
+  /* ---------- cute cat sticker ---------- */
+  .cute-cat{ display:block; width:100%; height:100%; }
+  .cute-cat .cat-eye{
+    animation:blink 4.6s infinite; transform-origin:center;
+  }
+  @keyframes blink{
+    0%,90%,100%{ transform:scaleY(1); }
+    94%{ transform:scaleY(.1); }
+  }
+  .cute-cat .cat-tail{
+    animation:wag 2.1s ease-in-out infinite; transform-origin:118px 90px;
+  }
+  @keyframes wag{
+    0%,100%{ transform:rotate(0deg); }
+    50%{ transform:rotate(9deg); }
+  }
+  .cat-deco{
+    position:absolute; z-index:3; pointer-events:none;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,.18));
+  }
+
+  /* ================= LOCK SCREEN ================= */
+  #screen-lock{
+    background: radial-gradient(circle at 50% 0%, #381d29 0%, var(--night) 60%);
+  }
+  .lock-card{
+    width:100%; max-width:360px;
+    text-align:center;
+    color:var(--paper);
+  }
+  .lock-card.shake{ animation:shake .55s ease; }
+  @keyframes shake{
+    10%,90%{ transform:translateX(-1px); }
+    20%,80%{ transform:translateX(3px); }
+    30%,50%,70%{ transform:translateX(-7px); }
+    40%,60%{ transform:translateX(7px); }
+  }
+  .lock-eyebrow{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--rose); margin-bottom:10px;
+  }
+  .lock-title{
+    font-family:var(--font-display); font-weight:500; font-style:italic;
+    font-size:26px; margin:0 0 6px;
+  }
+  .lock-sub{ font-size:13px; opacity:.6; margin-bottom:28px; }
+
+  .dots{ display:flex; justify-content:center; gap:14px; margin-bottom:14px; }
+  .dot{
+    width:14px; height:14px; border-radius:50%;
+    border:1.5px solid rgba(251,241,230,.45);
+    transition:background .2s, border-color .2s, transform .2s;
+  }
+  .dot.filled{ background:var(--gold); border-color:var(--gold); transform:scale(1.12); }
+
+  .lock-error{
+    height:18px; font-size:12px; color:#E8849A;
+    letter-spacing:.04em; opacity:0; transition:opacity .2s;
+    margin-bottom:6px;
+  }
+
+  .keypad{
+    display:grid; grid-template-columns:repeat(3,1fr);
+    gap:12px; margin-top:18px;
+  }
+  .key{
+    aspect-ratio:1; border-radius:50%;
+    background:rgba(251,241,230,.06);
+    border:1px solid rgba(251,241,230,.18);
+    color:var(--paper);
+    font-family:var(--font-display); font-size:21px;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s, transform .1s, border-color .15s;
+  }
+  .key:hover{ background:rgba(251,241,230,.12); border-color:var(--gold); }
+  .key:active{ transform:scale(.93); }
+  .key:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+
+  .lock-cat{ width:84px; height:84px; bottom:-14px; right:-18px; transform:rotate(8deg); }
+
+  /* ================= WISH SLIDES ================= */
+  .wish-screen{ background:var(--paper); }
+  .wish-card{
+    position:relative; max-width:520px; width:100%;
+    background:var(--paper-warm); border:1px solid var(--line);
+    border-radius:22px; padding:40px 34px;
+    text-align:center; z-index:2;
+  }
+  .eyebrow{
+    font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--rose-deep); margin-bottom:14px;
+  }
+  .wish-name{
+    font-family:var(--font-script); color:var(--rose-deep);
+    font-size:48px; line-height:1; margin:0 0 16px;
+  }
+  .wish-text{
+    font-size:16px; line-height:1.85; color:#5A3040;
+    margin:0 auto 8px; max-width:420px;
+  }
+  .slide-step{
+    margin-top:18px; font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--rose); opacity:.7;
+  }
+  .btn-continue{
+    border:none; background:var(--ink); color:var(--paper);
+    padding:13px 30px; border-radius:30px; margin-top:24px;
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    transition:transform .15s, background .15s;
+  }
+  .btn-continue:hover{ background:var(--rose-deep); transform:translateY(-1px); }
+  .btn-continue:focus-visible{ outline:2px solid var(--rose-deep); outline-offset:3px; }
+
+  .cat-tl{ width:78px; height:78px; top:-26px; left:-26px; transform:rotate(-14deg); }
+  .cat-br{ width:96px; height:96px; bottom:-30px; right:-30px; transform:rotate(10deg) scaleX(-1); }
+  .cat-mid{ width:64px; height:64px; top:-22px; right:18px; transform:rotate(16deg); }
+
+  /* ================= POEMS SCREEN ================= */
+  #screen-poems{ background:var(--night-soft); }
+  .poems-wrap{ position:relative; max-width:920px; width:100%; text-align:center; color:var(--paper); z-index:2; }
+  .poems-eyebrow{ font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--rose); margin-bottom:10px; }
+  .poems-title{ font-family:var(--font-display); font-style:italic; font-weight:500; font-size:26px; margin:0 0 8px; }
+  .poems-hint{ font-size:13px; opacity:.55; margin-bottom:34px; }
+
+  .poems-row{ display:flex; gap:22px; justify-content:center; flex-wrap:wrap; }
+  .poem-card{ width:240px; height:300px; perspective:1200px; cursor:pointer; }
+  .poem-card-inner{
+    position:relative; width:100%; height:100%;
+    transition:transform .7s cubic-bezier(.2,.7,.2,1);
+    transform-style:preserve-3d;
+  }
+  .poem-card.flipped .poem-card-inner{ transform:rotateY(180deg); }
+  .poem-face{
+    position:absolute; inset:0; border-radius:14px;
+    backface-visibility:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:22px;
+  }
+  .poem-front{
+    background:linear-gradient(160deg, #3A1E2B, #261018);
+    border:1px solid rgba(251,241,230,.18);
+  }
+  .poem-front .numeral{ font-family:var(--font-display); font-style:italic; font-size:44px; color:var(--gold); }
+  .poem-front .tap-hint{
+    margin-top:14px; font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:rgba(251,241,230,.5);
+  }
+  .poem-back{
+    background:var(--paper); color:var(--ink);
+    transform:rotateY(180deg); border:1px solid var(--line); overflow:auto;
+  }
+  .poem-back p{ font-family:var(--font-display); font-style:italic; font-size:16px; line-height:1.6; margin:0; }
+  .poem-card:focus-visible .poem-card-inner{ outline:2px solid var(--gold); outline-offset:4px; }
+
+  .closing{
+    font-family:var(--font-script); color:var(--rose); font-size:30px; margin-top:38px;
+    position:relative; display:inline-block;
+  }
+  .closing-wrap{ position:relative; display:inline-block; }
+  .cat-close{ width:60px; height:60px; bottom:-46px; left:-58px; transform:rotate(-10deg); }
+
+  /* ---------- sound toggle ---------- */
+  #soundToggle{
+    position:fixed; bottom:18px; right:18px; z-index:50;
+    width:44px; height:44px; border-radius:50%;
+    background:var(--ink); color:var(--paper); border:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; opacity:0; visibility:hidden;
+    transition:opacity .4s, transform .15s;
+    box-shadow:0 4px 14px rgba(0,0,0,.3);
+  }
+  #soundToggle.show{ opacity:1; visibility:visible; }
+  #soundToggle:active{ transform:scale(.92); }
+
+  /* responsive */
+  @media (max-width:480px){
+    .wish-name{ font-size:40px; }
+    .wish-card{ padding:32px 22px; }
+    .poem-card{ width:78vw; max-width:300px; height:260px; }
+    .cat-tl,.cat-br,.cat-mid{ transform:scale(.75); }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- ================= SCREEN 1: LOCK ================= -->
+  <section id="screen-lock" class="screen active">
+    <div class="emoji-field" data-count="10"></div>
+    <div class="lock-card rise" id="lockCard">
+      <div class="lock-eyebrow">only for you</div>
+      <h1 class="lock-title">Annie's Birthday</h1>
+      <p class="lock-sub">enter the passcode to open</p>
+
+      <div class="dots" id="dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <p class="lock-error" id="lockError">wrong passcode, try again 🐾</p>
+
+      <div class="keypad" id="keypad">
+        <button class="key" data-key="1">1</button>
+        <button class="key" data-key="2">2</button>
+        <button class="key" data-key="3">3</button>
+        <button class="key" data-key="4">4</button>
+        <button class="key" data-key="5">5</button>
+        <button class="key" data-key="6">6</button>
+        <button class="key" data-key="7">7</button>
+        <button class="key" data-key="8">8</button>
+        <button class="key" data-key="9">9</button>
+        <button class="key" data-key="*" aria-label="delete">⌫</button>
+        <button class="key" data-key="0">0</button>
+        <button class="key" data-key="#" aria-label="unused">♡</button>
+      </div>
+      <div class="cat-deco lock-cat cat-fill"></div>
+    </div>
+  </section>
+
+  <!-- ================= WISH SLIDE 1 ================= -->
+  <section id="screen-wish-1" class="screen wish-screen">
+    <div class="emoji-field" data-count="14"></div>
+    <div class="wish-card rise">
+      <div class="cat-deco cat-tl cat-fill"></div>
+      <div class="cat-deco cat-br cat-fill"></div>
+      <div class="eyebrow">happy birthday</div>
+      <h1 class="wish-name">Annie</h1>
+      <p class="wish-text">
+        I don't think you realize how special you are to the people who care about you.
+        You have this way of making ordinary moments feel a little brighter, and even on
+        days when you don't see it yourself, you leave a mark on the people around you.
+      </p>
+      <div class="slide-step">1 / 3</div>
+      <button class="btn-continue" data-next="screen-wish-2">continue</button>
+    </div>
+  </section>
+
+  <!-- ================= WISH SLIDE 2 ================= -->
+  <section id="screen-wish-2" class="screen wish-screen">
+    <div class="emoji-field" data-count="14"></div>
+    <div class="wish-card rise">
+      <div class="cat-deco cat-mid cat-fill"></div>
+      <div class="cat-deco cat-br cat-fill"></div>
+      <div class="eyebrow">and another thing</div>
+      <p class="wish-text">
+        I'm genuinely grateful that you're part of my life. Some people come and go, but
+        there are a few whose presence quietly becomes important, and you're one of them.
+      </p>
+      <div class="slide-step">2 / 3</div>
+      <button class="btn-continue" data-next="screen-wish-3">continue</button>
+    </div>
+  </section>
+
+  <!-- ================= WISH SLIDE 3 ================= -->
+  <section id="screen-wish-3" class="screen wish-screen">
+    <div class="emoji-field" data-count="14"></div>
+    <div class="wish-card rise">
+      <div class="cat-deco cat-tl cat-fill"></div>
+      <div class="cat-deco cat-mid cat-fill"></div>
+      <div class="eyebrow">last thing, promise</div>
+      <p class="wish-text">
+        I hope today makes you feel as appreciated as you deserve to be. Keep smiling, keep
+        being yourself, and keep making the world a little better just by being in it.
+        Happy Birthday, and thank you for being you.
+      </p>
+      <div class="slide-step">3 / 3</div>
+      <button class="btn-continue" data-next="screen-poems">a little something else</button>
+    </div>
+  </section>
+
+  <!-- ================= SCREEN: POEMS ================= -->
+  <section id="screen-poems" class="screen">
+    <div class="emoji-field" data-count="12"></div>
+    <div class="poems-wrap rise">
+      <div class="poems-eyebrow">three small things</div>
+      <h2 class="poems-title">tap a card to open it</h2>
+      <p class="poems-hint">for Annie, from me</p>
+
+      <div class="poems-row">
+        <div class="poem-card" tabindex="0" role="button" aria-label="open first poem">
+          <div class="poem-card-inner">
+            <div class="poem-face poem-front">
+              <span class="numeral">I</span>
+              <span class="tap-hint">tap to open</span>
+            </div>
+            <div class="poem-face poem-back">
+              <p>I look at you and close my eyes ever so gently, without setting eyes on anything else. For no sight is as worthy a sight as the sight of you.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="poem-card" tabindex="0" role="button" aria-label="open second poem">
+          <div class="poem-card-inner">
+            <div class="poem-face poem-front">
+              <span class="numeral">II</span>
+              <span class="tap-hint">tap to open</span>
+            </div>
+            <div class="poem-face poem-back">
+              <p>What is night but your open hair blinding me? What is summer but the sheen on your skin? What is nature's song but the rhythm of your footsteps? What is winter but the absence of you?</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="poem-card" tabindex="0" role="button" aria-label="open third poem">
+          <div class="poem-card-inner">
+            <div class="poem-face poem-front">
+              <span class="numeral">III</span>
+              <span class="tap-hint">tap to open</span>
+            </div>
+            <div class="poem-face poem-back">
+              <p>You cry and I feel the warmth of your tear on my cheek. You sigh and I find myself letting out a deep exhale. You close your eyes and I lose sight. Is this madness not love?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="closing-wrap">
+        <div class="cat-deco cat-close cat-fill"></div>
+        <p class="closing">happy birthday, Annie. always.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<button id="soundToggle" aria-label="mute or unmute music">🔊</button>
+
+<!-- hidden youtube audio player -->
+<div id="yt-player" style="position:fixed; width:2px; height:2px; opacity:0; pointer-events:none; bottom:0; left:0;"></div>
+
+<script>
+  /* ================= cute cat sticker (original illustration) ================= */
+  const CAT_SVG = `
+  <svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" class="cute-cat">
+    <path class="cat-tail" d="M118 110 C 145 95, 142 60, 118 55" fill="none" stroke="#C98298" stroke-width="10" stroke-linecap="round"/>
+    <ellipse cx="70" cy="108" rx="40" ry="26" fill="#F4E2D3"/>
+    <ellipse cx="50" cy="128" rx="10" ry="8" fill="#FBF1E6"/>
+    <ellipse cx="90" cy="128" rx="10" ry="8" fill="#FBF1E6"/>
+    <circle cx="70" cy="62" r="38" fill="#F4E2D3"/>
+    <path d="M40 40 L30 8 L58 32 Z" fill="#F4E2D3"/>
+    <path d="M100 40 L110 8 L82 32 Z" fill="#F4E2D3"/>
+    <path d="M42 36 L36 16 L54 32 Z" fill="#E8A6B8"/>
+    <path d="M98 36 L104 16 L86 32 Z" fill="#E8A6B8"/>
+    <g class="cat-bow" transform="translate(70 24)">
+      <path d="M0 0 L-14 -8 L-14 8 Z" fill="#C9486B"/>
+      <path d="M0 0 L14 -8 L14 8 Z" fill="#C9486B"/>
+      <circle cx="0" cy="0" r="4" fill="#A8324E"/>
+    </g>
+    <g stroke="#3F1626" stroke-width="3" fill="none">
+      <circle cx="55" cy="64" r="13"/>
+      <circle cx="85" cy="64" r="13"/>
+      <line x1="68" y1="64" x2="72" y2="64"/>
+      <line x1="42" y1="60" x2="34" y2="56"/>
+      <line x1="98" y1="60" x2="106" y2="56"/>
+    </g>
+    <ellipse class="cat-eye" cx="55" cy="64" rx="4" ry="5" fill="#3F1626"/>
+    <ellipse class="cat-eye" cx="85" cy="64" rx="4" ry="5" fill="#3F1626"/>
+    <path d="M66 78 L74 78 L70 84 Z" fill="#C9486B"/>
+    <path d="M70 84 Q 64 92, 56 88 M70 84 Q 76 92, 84 88" stroke="#3F1626" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <g stroke="#D8B79A" stroke-width="2" stroke-linecap="round">
+      <line x1="20" y1="66" x2="40" y2="62"/>
+      <line x1="20" y1="76" x2="40" y2="74"/>
+      <line x1="120" y1="66" x2="100" y2="62"/>
+      <line x1="120" y1="76" x2="100" y2="74"/>
+    </g>
+  </svg>`;
+
+  const BOW_COLORS = ['#C9486B','#C9A227','#7C8FC9','#6FA876'];
+
+  document.querySelectorAll('.cat-fill').forEach((el, i) => {
+    el.innerHTML = CAT_SVG;
+    const bowParts = el.querySelectorAll('.cat-bow path, .cat-bow circle');
+    const color = BOW_COLORS[i % BOW_COLORS.length];
+    bowParts.forEach(p => p.setAttribute('fill', color));
+  });
+
+  /* ================= floating emoji backdrop ================= */
+  const EMOJIS = ['💕','✨','🐾','🎀','💗','⭐','🌸'];
+  document.querySelectorAll('.emoji-field').forEach(field => {
+    const count = parseInt(field.dataset.count || '10', 10);
+    for (let i = 0; i < count; i++){
+      const span = document.createElement('span');
+      span.className = 'emoji-bit';
+      span.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+      const size = 14 + Math.random() * 16;
+      span.style.fontSize = size + 'px';
+      span.style.left = (Math.random() * 92) + '%';
+      span.style.top = (Math.random() * 88) + '%';
+      span.style.opacity = (0.35 + Math.random() * 0.4).toFixed(2);
+      span.style.animationDuration = (4 + Math.random() * 3) + 's';
+      span.style.animationDelay = (Math.random() * 3) + 's';
+      field.appendChild(span);
+    }
+  });
+
+  /* ================= screen navigation ================= */
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  document.querySelectorAll('.btn-continue[data-next]').forEach(btn => {
+    btn.addEventListener('click', () => showScreen(btn.dataset.next));
+  });
+
+  /* ================= lock screen ================= */
+  const PASSCODE = "2330";
+  let entered = "";
+  const dots = document.querySelectorAll('#dots .dot');
+  const lockCard = document.getElementById('lockCard');
+  const lockError = document.getElementById('lockError');
+
+  function updateDots(){
+    dots.forEach((d,i) => d.classList.toggle('filled', i < entered.length));
+  }
+
+  function pressKey(k){
+    startMusicOnce(); // first tap on the keypad is our user-gesture to start audio
+    if(k === '*'){ entered = entered.slice(0,-1); updateDots(); return; }
+    if(k === '#'){ return; }
+    if(entered.length >= 4) return;
+    entered += k;
+    updateDots();
+    if(entered.length === 4){
+      setTimeout(checkCode, 180);
+    }
+  }
+
+  function checkCode(){
+    if(entered === PASSCODE){ unlock(); } else { wrongCode(); }
+  }
+
+  function wrongCode(){
+    lockCard.classList.add('shake');
+    lockError.style.opacity = 1;
+    setTimeout(() => {
+      entered = "";
+      updateDots();
+      lockCard.classList.remove('shake');
+    }, 600);
+  }
+
+  function unlock(){
+    lockError.style.opacity = 0;
+    document.getElementById('screen-lock').classList.add('screen-exit');
+    setTimeout(() => {
+      document.getElementById('screen-lock').classList.remove('active','screen-exit');
+      showScreen('screen-wish-1');
+      document.getElementById('soundToggle').classList.add('show');
+    }, 650);
+  }
+
+  document.getElementById('keypad').addEventListener('click', (e) => {
+    const btn = e.target.closest('.key');
+    if(!btn) return;
+    pressKey(btn.dataset.key);
+  });
+
+  /* ================= poem flip cards ================= */
+  document.querySelectorAll('.poem-card').forEach(card => {
+    function toggle(){ card.classList.toggle('flipped'); }
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+    });
+  });
+
+  /* ================= background music (YouTube, official embed) =================
+     NOTE: we use an officially embeddable YouTube player rather than hosting a raw
+     audio file, so the music plays the same everywhere but stays within YouTube's
+     own licensed playback. It starts on the first tap on the lock screen (browsers
+     require a user gesture before audio can play) and loops continuously. */
+  const VIDEO_ID = '2Vv-BfVoq4g'; // Ed Sheeran - Perfect (Official Music Video)
+  let ytPlayer = null;
+  let ytReady = false;
+  let musicStarted = false;
+  let isMuted = false;
+
+  function onYouTubeIframeAPIReady(){
+    ytPlayer = new YT.Player('yt-player', {
+      height: '2',
+      width: '2',
+      videoId: VIDEO_ID,
+      playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, loop: 1, playlist: VIDEO_ID },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          if(musicStarted){ ytPlayer.playVideo(); }
+        },
+        onStateChange: (e) => {
+          if(e.data === YT.PlayerState.ENDED){
+            ytPlayer.seekTo(0);
+            ytPlayer.playVideo();
+          }
+        }
+      }
+    });
+  }
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+  function startMusicOnce(){
+    if(musicStarted) return;
+    musicStarted = true;
+    if(ytReady && ytPlayer){ ytPlayer.playVideo(); }
+  }
+
+  const ytScript = document.createElement('script');
+  ytScript.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(ytScript);
+
+  /* ================= sound toggle (also doubles as a manual play fallback) ================= */
+  document.getElementById('soundToggle').addEventListener('click', () => {
+    if(!ytPlayer) return;
+    const state = ytPlayer.getPlayerState();
+    const isPlaying = state === 1; // YT.PlayerState.PLAYING
+    if(!isPlaying){
+      // covers any case where autoplay-after-gesture was blocked by the browser
+      musicStarted = true;
+      ytPlayer.unMute();
+      ytPlayer.playVideo();
+      isMuted = false;
+      document.getElementById('soundToggle').textContent = '🔊';
+      return;
+    }
+    isMuted = !isMuted;
+    if(isMuted){ ytPlayer.mute(); document.getElementById('soundToggle').textContent = '🔇'; }
+    else { ytPlayer.unMute(); document.getElementById('soundToggle').textContent = '🔊'; }
+  });
+
+  /* extra safety net: re-attempt play once each wish slide is reached */
+  document.querySelectorAll('.btn-continue[data-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(ytReady && ytPlayer && ytPlayer.getPlayerState() !== 1){
+        ytPlayer.playVideo();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
