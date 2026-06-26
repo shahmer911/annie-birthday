@@ -187,6 +187,84 @@
   .cat-br{ width:96px; height:96px; bottom:-30px; right:-30px; transform:rotate(10deg) scaleX(-1); }
   .cat-mid{ width:64px; height:64px; top:-22px; right:18px; transform:rotate(16deg); }
 
+  /* ================= CAKE SCREEN ================= */
+  #screen-cake{
+    background: radial-gradient(ellipse at 50% 30%, #3d1530 0%, #1a0a14 60%, #0e060d 100%);
+    flex-direction:column;
+    gap:0;
+  }
+
+  /* floating corner cats on cake screen */
+  .cake-cat-corner{
+    position:absolute; z-index:4; pointer-events:none;
+    filter:drop-shadow(0 4px 14px rgba(0,0,0,.3));
+  }
+  .cake-cat-tl2{ width:72px; height:72px; top:14px; left:14px; transform:rotate(-10deg); }
+  .cake-cat-tr2{ width:72px; height:72px; top:14px; right:14px; transform:rotate(12deg) scaleX(-1); }
+  .cake-cat-bl2{ width:60px; height:60px; bottom:80px; left:10px; transform:rotate(8deg); }
+  .cake-cat-br2{ width:60px; height:60px; bottom:80px; right:10px; transform:rotate(-8deg) scaleX(-1); }
+
+  .cake-wrap{
+    position:relative; display:flex; flex-direction:column;
+    align-items:center; z-index:2; width:100%; max-width:380px;
+  }
+
+  .cake-title{
+    font-family:var(--font-script); color:var(--paper);
+    font-size:34px; margin:0 0 4px; text-align:center;
+    text-shadow:0 0 20px rgba(201,162,39,.5);
+  }
+  .cake-sub{
+    font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--rose); opacity:.8; margin-bottom:18px; text-align:center;
+  }
+
+  /* ---- candle + flame ---- */
+  .cake-canvas-wrap{
+    position:relative; width:260px; height:260px;
+    margin:0 auto 16px;
+  }
+  #cakeCanvas{ display:block; width:260px; height:260px; }
+
+  /* glow overlay behind canvas */
+  .candle-glow{
+    position:absolute; inset:0; border-radius:50%;
+    background: radial-gradient(ellipse at 50% 38%, rgba(255,200,60,.28) 0%, transparent 68%);
+    pointer-events:none; z-index:1;
+    animation: glowPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes glowPulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:.65; transform:scale(1.04); }
+  }
+
+  /* blow instruction */
+  .blow-hint{
+    font-size:13px; color:rgba(251,241,230,.7);
+    letter-spacing:.06em; margin-bottom:14px; text-align:center;
+    animation: blinkHint 2s ease-in-out infinite;
+  }
+  @keyframes blinkHint{
+    0%,100%{ opacity:.7; }
+    50%{ opacity:.3; }
+  }
+  .blow-hint.hidden{ display:none; }
+
+  /* extinguished message */
+  .blown-msg{
+    display:none; text-align:center;
+    font-family:var(--font-script); font-size:28px; color:var(--gold);
+    text-shadow:0 0 18px rgba(201,162,39,.6);
+    margin-bottom:10px;
+  }
+  .blown-msg.show{ display:block; animation:rise .6s ease both; }
+
+  /* confetti canvas */
+  #confettiCanvas{
+    position:fixed; inset:0; pointer-events:none; z-index:100;
+    width:100%; height:100%;
+  }
+
   /* ================= POEMS SCREEN ================= */
   #screen-poems{ background:var(--night-soft); }
   .poems-wrap{ position:relative; max-width:920px; width:100%; text-align:center; color:var(--paper); z-index:2; }
@@ -224,6 +302,10 @@
   .poem-back p{ font-family:var(--font-display); font-style:italic; font-size:16px; line-height:1.6; margin:0; }
   .poem-card:focus-visible .poem-card-inner{ outline:2px solid var(--gold); outline-offset:4px; }
 
+  /* extra cats on poems screen */
+  .poems-cat-l{ width:70px; height:70px; left:8px; top:50%; transform:translateY(-50%) rotate(-8deg); }
+  .poems-cat-r{ width:70px; height:70px; right:8px; top:50%; transform:translateY(-50%) rotate(8deg) scaleX(-1); }
+
   .closing{
     font-family:var(--font-script); color:var(--rose); font-size:30px; margin-top:38px;
     position:relative; display:inline-block;
@@ -250,10 +332,14 @@
     .wish-card{ padding:32px 22px; }
     .poem-card{ width:78vw; max-width:300px; height:260px; }
     .cat-tl,.cat-br,.cat-mid{ transform:scale(.75); }
+    .cake-canvas-wrap{ width:220px; height:220px; }
+    #cakeCanvas{ width:220px; height:220px; }
   }
 </style>
 </head>
 <body>
+
+<canvas id="confettiCanvas"></canvas>
 
 <div class="stage">
 
@@ -339,13 +425,47 @@
         Happy Birthday, and thank you for being you.
       </p>
       <div class="slide-step">3 / 3</div>
-      <button class="btn-continue" data-next="screen-poems">a little something else</button>
+      <button class="btn-continue" data-next="screen-cake">make a wish 🎂</button>
+    </div>
+  </section>
+
+  <!-- ================= CAKE SCREEN ================= -->
+  <section id="screen-cake" class="screen">
+    <div class="emoji-field" data-count="16" data-emojis="🎂🎀✨🌸💖🎉⭐🐾"></div>
+
+    <!-- four corner cats -->
+    <div class="cat-deco cake-cat-corner cake-cat-tl2 cat-fill"></div>
+    <div class="cat-deco cake-cat-corner cake-cat-tr2 cat-fill"></div>
+    <div class="cat-deco cake-cat-corner cake-cat-bl2 cat-fill"></div>
+    <div class="cat-deco cake-cat-corner cake-cat-br2 cat-fill"></div>
+
+    <div class="cake-wrap rise">
+      <div class="cake-title">Make a Wish, Annie ✨</div>
+      <div class="cake-sub">blow out the candles</div>
+
+      <div class="cake-canvas-wrap">
+        <div class="candle-glow" id="candleGlow"></div>
+        <canvas id="cakeCanvas" width="520" height="520"></canvas>
+      </div>
+
+      <p class="blow-hint" id="blowHint">🌬️ blow into your mic — or tap the cake!</p>
+      <p class="blown-msg" id="blownMsg">🎉 Happy Birthday, Annie! 🎉</p>
+
+      <button class="btn-continue" id="btnAfterCake" data-next="screen-poems"
+        style="display:none; margin-top:10px;">
+        open your poems 💌
+      </button>
     </div>
   </section>
 
   <!-- ================= SCREEN: POEMS ================= -->
   <section id="screen-poems" class="screen">
     <div class="emoji-field" data-count="12"></div>
+
+    <!-- side cats -->
+    <div class="cat-deco poems-cat-l cat-fill"></div>
+    <div class="cat-deco poems-cat-r cat-fill"></div>
+
     <div class="poems-wrap rise">
       <div class="poems-eyebrow">three small things</div>
       <h2 class="poems-title">tap a card to open it</h2>
@@ -400,210 +520,567 @@
 
 <button id="soundToggle" aria-label="mute or unmute music">🔊</button>
 
-<!-- hidden youtube audio player (official embed) -->
+<!-- hidden youtube audio player -->
 <div id="yt-player" style="position:fixed; width:2px; height:2px; opacity:0; pointer-events:none; bottom:0; left:0;"></div>
 
 <script>
-  /* ================= cute cat sticker (original illustration) ================= */
-  const CAT_SVG = `
-  <svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" class="cute-cat">
-    <path class="cat-tail" d="M118 110 C 145 95, 142 60, 118 55" fill="none" stroke="#C98298" stroke-width="10" stroke-linecap="round"/>
-    <ellipse cx="70" cy="108" rx="40" ry="26" fill="#F4E2D3"/>
-    <ellipse cx="50" cy="128" rx="10" ry="8" fill="#FBF1E6"/>
-    <ellipse cx="90" cy="128" rx="10" ry="8" fill="#FBF1E6"/>
-    <circle cx="70" cy="62" r="38" fill="#F4E2D3"/>
-    <path d="M40 40 L30 8 L58 32 Z" fill="#F4E2D3"/>
-    <path d="M100 40 L110 8 L82 32 Z" fill="#F4E2D3"/>
-    <path d="M42 36 L36 16 L54 32 Z" fill="#E8A6B8"/>
-    <path d="M98 36 L104 16 L86 32 Z" fill="#E8A6B8"/>
-    <g class="cat-bow" transform="translate(70 24)">
-      <path d="M0 0 L-14 -8 L-14 8 Z" fill="#C9486B"/>
-      <path d="M0 0 L14 -8 L14 8 Z" fill="#C9486B"/>
-      <circle cx="0" cy="0" r="4" fill="#A8324E"/>
-    </g>
-    <g stroke="#3F1626" stroke-width="3" fill="none">
-      <circle cx="55" cy="64" r="13"/>
-      <circle cx="85" cy="64" r="13"/>
-      <line x1="68" y1="64" x2="72" y2="64"/>
-      <line x1="42" y1="60" x2="34" y2="56"/>
-      <line x1="98" y1="60" x2="106" y2="56"/>
-    </g>
-    <ellipse class="cat-eye" cx="55" cy="64" rx="4" ry="5" fill="#3F1626"/>
-    <ellipse class="cat-eye" cx="85" cy="64" rx="4" ry="5" fill="#3F1626"/>
-    <path d="M66 78 L74 78 L70 84 Z" fill="#C9486B"/>
-    <path d="M70 84 Q 64 92, 56 88 M70 84 Q 76 92, 84 88" stroke="#3F1626" stroke-width="2" fill="none" stroke-linecap="round"/>
-    <g stroke="#D8B79A" stroke-width="2" stroke-linecap="round">
-      <line x1="20" y1="66" x2="40" y2="62"/>
-      <line x1="20" y1="76" x2="40" y2="74"/>
-      <line x1="120" y1="66" x2="100" y2="62"/>
-      <line x1="120" y1="76" x2="100" y2="74"/>
-    </g>
-  </svg>`;
+/* ================= cute cat sticker ================= */
+const CAT_SVG = `
+<svg viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" class="cute-cat">
+  <path class="cat-tail" d="M118 110 C 145 95, 142 60, 118 55" fill="none" stroke="#C98298" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="70" cy="108" rx="40" ry="26" fill="#F4E2D3"/>
+  <ellipse cx="50" cy="128" rx="10" ry="8" fill="#FBF1E6"/>
+  <ellipse cx="90" cy="128" rx="10" ry="8" fill="#FBF1E6"/>
+  <circle cx="70" cy="62" r="38" fill="#F4E2D3"/>
+  <path d="M40 40 L30 8 L58 32 Z" fill="#F4E2D3"/>
+  <path d="M100 40 L110 8 L82 32 Z" fill="#F4E2D3"/>
+  <path d="M42 36 L36 16 L54 32 Z" fill="#E8A6B8"/>
+  <path d="M98 36 L104 16 L86 32 Z" fill="#E8A6B8"/>
+  <g class="cat-bow" transform="translate(70 24)">
+    <path d="M0 0 L-14 -8 L-14 8 Z" fill="#C9486B"/>
+    <path d="M0 0 L14 -8 L14 8 Z" fill="#C9486B"/>
+    <circle cx="0" cy="0" r="4" fill="#A8324E"/>
+  </g>
+  <g stroke="#3F1626" stroke-width="3" fill="none">
+    <circle cx="55" cy="64" r="13"/>
+    <circle cx="85" cy="64" r="13"/>
+    <line x1="68" y1="64" x2="72" y2="64"/>
+    <line x1="42" y1="60" x2="34" y2="56"/>
+    <line x1="98" y1="60" x2="106" y2="56"/>
+  </g>
+  <ellipse class="cat-eye" cx="55" cy="64" rx="4" ry="5" fill="#3F1626"/>
+  <ellipse class="cat-eye" cx="85" cy="64" rx="4" ry="5" fill="#3F1626"/>
+  <path d="M66 78 L74 78 L70 84 Z" fill="#C9486B"/>
+  <path d="M70 84 Q 64 92, 56 88 M70 84 Q 76 92, 84 88" stroke="#3F1626" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <g stroke="#D8B79A" stroke-width="2" stroke-linecap="round">
+    <line x1="20" y1="66" x2="40" y2="62"/>
+    <line x1="20" y1="76" x2="40" y2="74"/>
+    <line x1="120" y1="66" x2="100" y2="62"/>
+    <line x1="120" y1="76" x2="100" y2="74"/>
+  </g>
+</svg>`;
 
-  const BOW_COLORS = ['#C9486B','#C9A227','#7C8FC9','#6FA876'];
+const BOW_COLORS = ['#C9486B','#C9A227','#7C8FC9','#6FA876','#E8849A','#9B7EC9'];
 
-  document.querySelectorAll('.cat-fill').forEach((el, i) => {
-    el.innerHTML = CAT_SVG;
-    const bowParts = el.querySelectorAll('.cat-bow path, .cat-bow circle');
-    const color = BOW_COLORS[i % BOW_COLORS.length];
-    bowParts.forEach(p => p.setAttribute('fill', color));
-  });
+document.querySelectorAll('.cat-fill').forEach((el, i) => {
+  el.innerHTML = CAT_SVG;
+  const bowParts = el.querySelectorAll('.cat-bow path, .cat-bow circle');
+  const color = BOW_COLORS[i % BOW_COLORS.length];
+  bowParts.forEach(p => p.setAttribute('fill', color));
+});
 
-  /* ================= floating emoji backdrop ================= */
-  const EMOJIS = ['💕','✨','🐾','🎀','💗','⭐','🌸'];
-  document.querySelectorAll('.emoji-field').forEach(field => {
-    const count = parseInt(field.dataset.count || '10', 10);
-    for (let i = 0; i < count; i++){
-      const span = document.createElement('span');
-      span.className = 'emoji-bit';
-      span.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
-      const size = 14 + Math.random() * 16;
-      span.style.fontSize = size + 'px';
-      span.style.left = (Math.random() * 92) + '%';
-      span.style.top = (Math.random() * 88) + '%';
-      span.style.opacity = (0.35 + Math.random() * 0.4).toFixed(2);
-      span.style.animationDuration = (4 + Math.random() * 3) + 's';
-      span.style.animationDelay = (Math.random() * 3) + 's';
-      field.appendChild(span);
-    }
-  });
-
-  /* ================= screen navigation ================= */
-  function showScreen(id){
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+/* ================= floating emoji backdrop ================= */
+const DEFAULT_EMOJIS = ['💕','✨','🐾','🎀','💗','⭐','🌸'];
+document.querySelectorAll('.emoji-field').forEach(field => {
+  const count = parseInt(field.dataset.count || '10', 10);
+  const emojiSet = field.dataset.emojis
+    ? field.dataset.emojis.split('')
+    : DEFAULT_EMOJIS;
+  // for multi-char emojis, split by grapheme clusters instead
+  const emojiArr = field.dataset.emojis
+    ? [...new Intl.Segmenter().segment(field.dataset.emojis)].map(s=>s.segment)
+    : DEFAULT_EMOJIS;
+  for (let i = 0; i < count; i++){
+    const span = document.createElement('span');
+    span.className = 'emoji-bit';
+    span.textContent = emojiArr[Math.floor(Math.random() * emojiArr.length)];
+    const size = 14 + Math.random() * 16;
+    span.style.fontSize = size + 'px';
+    span.style.left = (Math.random() * 92) + '%';
+    span.style.top = (Math.random() * 88) + '%';
+    span.style.opacity = (0.35 + Math.random() * 0.4).toFixed(2);
+    span.style.animationDuration = (4 + Math.random() * 3) + 's';
+    span.style.animationDelay = (Math.random() * 3) + 's';
+    field.appendChild(span);
   }
-  document.querySelectorAll('.btn-continue[data-next]').forEach(btn => {
-    btn.addEventListener('click', () => showScreen(btn.dataset.next));
-  });
+});
 
-  /* ================= lock screen ================= */
-  const PASSCODE = "2330";
-  let entered = "";
-  const dots = document.querySelectorAll('#dots .dot');
-  const lockCard = document.getElementById('lockCard');
-  const lockError = document.getElementById('lockError');
+/* ================= screen navigation ================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id === 'screen-cake') initCakeScreen();
+}
+document.querySelectorAll('.btn-continue[data-next]').forEach(btn => {
+  btn.addEventListener('click', () => showScreen(btn.dataset.next));
+});
 
-  function updateDots(){
-    dots.forEach((d,i) => d.classList.toggle('filled', i < entered.length));
-  }
+/* ================= lock screen ================= */
+const PASSCODE = "2330";
+let entered = "";
+const dots = document.querySelectorAll('#dots .dot');
+const lockCard = document.getElementById('lockCard');
+const lockError = document.getElementById('lockError');
 
-  function pressKey(k){
-    startMusicOnce(); // first tap on the keypad is our user-gesture to start audio
-    if(k === '*'){ entered = entered.slice(0,-1); updateDots(); return; }
-    if(k === '#'){ return; }
-    if(entered.length >= 4) return;
-    entered += k;
+function updateDots(){
+  dots.forEach((d,i) => d.classList.toggle('filled', i < entered.length));
+}
+
+function pressKey(k){
+  startMusicOnce();
+  if(k === '*'){ entered = entered.slice(0,-1); updateDots(); return; }
+  if(k === '#'){ return; }
+  if(entered.length >= 4) return;
+  entered += k;
+  updateDots();
+  if(entered.length === 4){ setTimeout(checkCode, 180); }
+}
+
+function checkCode(){
+  if(entered === PASSCODE){ unlock(); } else { wrongCode(); }
+}
+
+function wrongCode(){
+  lockCard.classList.add('shake');
+  lockError.style.opacity = 1;
+  setTimeout(() => {
+    entered = "";
     updateDots();
-    if(entered.length === 4){
-      setTimeout(checkCode, 180);
+    lockCard.classList.remove('shake');
+  }, 600);
+}
+
+function unlock(){
+  lockError.style.opacity = 0;
+  document.getElementById('screen-lock').classList.add('screen-exit');
+  setTimeout(() => {
+    document.getElementById('screen-lock').classList.remove('active','screen-exit');
+    showScreen('screen-wish-1');
+    document.getElementById('soundToggle').classList.add('show');
+  }, 650);
+}
+
+document.getElementById('keypad').addEventListener('click', (e) => {
+  const btn = e.target.closest('.key');
+  if(!btn) return;
+  pressKey(btn.dataset.key);
+});
+
+/* ================= poem flip cards ================= */
+document.querySelectorAll('.poem-card').forEach(card => {
+  function toggle(){ card.classList.toggle('flipped'); }
+  card.addEventListener('click', toggle);
+  card.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+  });
+});
+
+/* ================================================================
+   CAKE SCREEN — canvas-drawn cake with animated candles + blow detection
+   ================================================================ */
+let cakeInited = false;
+let candlesLit = true;
+let flameTime = 0;
+let cakeRaf = null;
+let audioCtx = null;
+let micStream = null;
+let analyser = null;
+let blowDetectInterval = null;
+
+const NUM_CANDLES = 5;
+// candle x positions across cake top (relative to cake centre)
+const CANDLE_OFFSETS = [-72, -36, 0, 36, 72];
+const CANDLE_COLORS  = ['#E84855','#F9A826','#C9A227','#E84855','#F9A826'];
+const FLAME_COLORS   = [
+  {inner:'#fff7c0', outer:'#ffb347', glow:'rgba(255,160,50,0.55)'},
+  {inner:'#ffe8cc', outer:'#ff7043', glow:'rgba(255,100,40,0.55)'},
+  {inner:'#feffd4', outer:'#ffc107', glow:'rgba(255,200,60,0.55)'},
+  {inner:'#fff7c0', outer:'#ffb347', glow:'rgba(255,160,50,0.55)'},
+  {inner:'#ffe8cc', outer:'#ff7043', glow:'rgba(255,100,40,0.55)'},
+];
+
+// per-candle lit state
+let candleStates = Array(NUM_CANDLES).fill(true);
+
+function initCakeScreen(){
+  if(cakeInited) return;
+  cakeInited = true;
+
+  const canvas = document.getElementById('cakeCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  function drawCake(t){
+    ctx.clearRect(0,0,W,H);
+
+    const cx = W/2, cakeTop = H*0.52;
+    const cakeW = W*0.72, cakeH = H*0.22;
+    const tier1W = cakeW * 0.82, tier1H = cakeH * 0.55;
+
+    // === bottom tier ===
+    // shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 28;
+    ctx.shadowOffsetY = 10;
+
+    // body
+    roundRect(ctx, cx - cakeW/2, cakeTop, cakeW, cakeH, 18);
+    const grad1 = ctx.createLinearGradient(cx-cakeW/2, cakeTop, cx+cakeW/2, cakeTop+cakeH);
+    grad1.addColorStop(0,'#c94060');
+    grad1.addColorStop(0.5,'#e05578');
+    grad1.addColorStop(1,'#a83050');
+    ctx.fillStyle = grad1;
+    ctx.fill();
+
+    ctx.restore();
+
+    // frosting drips bottom
+    drawFrosting(ctx, cx-cakeW/2+10, cakeTop-4, cakeW-20, 18, '#FBF1E6');
+
+    // dots decoration on bottom tier
+    for(let i=0;i<7;i++){
+      const dx = cx - cakeW/2 + 28 + i*(cakeW-56)/6;
+      ctx.beginPath();
+      ctx.arc(dx, cakeTop+cakeH*0.55, 5, 0, Math.PI*2);
+      ctx.fillStyle = '#f9a8c0';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(dx, cakeTop+cakeH*0.55, 3, 0, Math.PI*2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
     }
-  }
 
-  function checkCode(){
-    if(entered === PASSCODE){ unlock(); } else { wrongCode(); }
-  }
+    // === top tier ===
+    const tier1Top = cakeTop - tier1H - 2;
 
-  function wrongCode(){
-    lockCard.classList.add('shake');
-    lockError.style.opacity = 1;
-    setTimeout(() => {
-      entered = "";
-      updateDots();
-      lockCard.classList.remove('shake');
-    }, 600);
-  }
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 8;
 
-  function unlock(){
-    lockError.style.opacity = 0;
-    document.getElementById('screen-lock').classList.add('screen-exit');
-    setTimeout(() => {
-      document.getElementById('screen-lock').classList.remove('active','screen-exit');
-      showScreen('screen-wish-1');
-      document.getElementById('soundToggle').classList.add('show');
-    }, 650);
-  }
+    roundRect(ctx, cx - tier1W/2, tier1Top, tier1W, tier1H, 14);
+    const grad2 = ctx.createLinearGradient(cx-tier1W/2, tier1Top, cx+tier1W/2, tier1Top+tier1H);
+    grad2.addColorStop(0,'#e06080');
+    grad2.addColorStop(0.5,'#f07090');
+    grad2.addColorStop(1,'#c84060');
+    ctx.fillStyle = grad2;
+    ctx.fill();
+    ctx.restore();
 
-  document.getElementById('keypad').addEventListener('click', (e) => {
-    const btn = e.target.closest('.key');
-    if(!btn) return;
-    pressKey(btn.dataset.key);
-  });
+    // frosting drips top tier
+    drawFrosting(ctx, cx-tier1W/2+8, tier1Top-4, tier1W-16, 15, '#FBF1E6');
 
-  /* ================= poem flip cards ================= */
-  document.querySelectorAll('.poem-card').forEach(card => {
-    function toggle(){ card.classList.toggle('flipped'); }
-    card.addEventListener('click', toggle);
-    card.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
-    });
-  });
+    // "happy birthday" text on top tier
+    ctx.save();
+    ctx.font = 'italic bold 19px "Cormorant Garamond", serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(160,30,60,0.5)';
+    ctx.shadowBlur = 6;
+    ctx.fillText('happy birthday ♡', cx, tier1Top + tier1H/2);
+    ctx.restore();
 
-  /* ================= background music (original, self-contained, no external file) =================
-     We use YouTube's official embeddable player (not a hosted copy of the audio),
-     cued to start right at "I found a love, for me..." instead of the song's
-     short instrumental intro. When it loops, it jumps back to that same line
-     rather than restarting from 0:00. */
-  const VIDEO_ID = '2Vv-BfVoq4g'; // Ed Sheeran - Perfect (Official Music Video)
-  const START_SECONDS = 10; // best estimate of where "I found a love, for me" begins — tell me if this needs nudging
-  let ytPlayer = null;
-  let ytReady = false;
-  let musicStarted = false;
-  let isMuted = false;
+    // === candles on top of top tier ===
+    const candleBaseY = tier1Top + 4;
+    const candleH = H * 0.13;
+    const candleW = 13;
 
-  function onYouTubeIframeAPIReady(){
-    ytPlayer = new YT.Player('yt-player', {
-      height: '2',
-      width: '2',
-      videoId: VIDEO_ID,
-      playerVars: {
-        autoplay: 0, controls: 0, modestbranding: 1, rel: 0,
-        loop: 1, playlist: VIDEO_ID, start: START_SECONDS
-      },
-      events: {
-        onReady: () => {
-          ytReady = true;
-          if(musicStarted){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
-        },
-        onStateChange: (e) => {
-          if(e.data === YT.PlayerState.ENDED){
-            ytPlayer.seekTo(START_SECONDS);
-            ytPlayer.playVideo();
-          }
-        }
+    CANDLE_OFFSETS.forEach((off, i) => {
+      const cx2 = cx + off;
+
+      // candle body
+      const cg = ctx.createLinearGradient(cx2-candleW/2, candleBaseY-candleH, cx2+candleW/2, candleBaseY);
+      cg.addColorStop(0, lighten(CANDLE_COLORS[i], 30));
+      cg.addColorStop(1, CANDLE_COLORS[i]);
+      roundRect(ctx, cx2-candleW/2, candleBaseY-candleH, candleW, candleH, 5);
+      ctx.fillStyle = cg;
+      ctx.fill();
+
+      // candle stripe
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      for(let s=0;s<3;s++){
+        const sy = candleBaseY - candleH + 10 + s*18;
+        ctx.fillRect(cx2-candleW/2+2, sy, candleW-4, 5);
+      }
+
+      // wick
+      const wickY = candleBaseY - candleH;
+      ctx.beginPath();
+      ctx.moveTo(cx2, wickY);
+      ctx.lineTo(cx2, wickY - 10);
+      ctx.strokeStyle = '#4a2020';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // flame
+      if(candleStates[i]){
+        drawFlame(ctx, cx2, wickY - 10, t, i);
       }
     });
+
+    // plate
+    ctx.save();
+    ctx.shadowColor='rgba(0,0,0,0.3)';
+    ctx.shadowBlur=12;
+    ctx.shadowOffsetY=4;
+    const plateEllipseW = cakeW + 24, plateEllipseH = 14;
+    ctx.beginPath();
+    ctx.ellipse(cx, cakeTop+cakeH+4, plateEllipseW/2, plateEllipseH/2, 0, 0, Math.PI*2);
+    const plateG = ctx.createRadialGradient(cx, cakeTop+cakeH+4, 4, cx, cakeTop+cakeH+4, plateEllipseW/2);
+    plateG.addColorStop(0,'#f8f0e6');
+    plateG.addColorStop(1,'#d8c8b4');
+    ctx.fillStyle = plateG;
+    ctx.fill();
+    ctx.restore();
   }
-  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
-  function startMusicOnce(){
-    if(musicStarted) return;
-    musicStarted = true;
-    if(ytReady && ytPlayer){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
+  function drawFlame(ctx, x, tipY, t, idx){
+    const fc = FLAME_COLORS[idx];
+    const flicker = Math.sin(t*0.07 + idx*1.3)*3 + Math.sin(t*0.13 + idx*0.7)*2;
+    const fh = 28 + flicker;
+    const fw = 11 + Math.sin(t*0.09+idx)*2;
+
+    // glow
+    const glowR = ctx.createRadialGradient(x, tipY-fh*0.3, 2, x, tipY-fh*0.3, fh*1.2);
+    glowR.addColorStop(0, fc.glow);
+    glowR.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(x, tipY - fh*0.3, fh*1.2, 0, Math.PI*2);
+    ctx.fillStyle = glowR;
+    ctx.fill();
+
+    // outer flame
+    ctx.beginPath();
+    ctx.moveTo(x, tipY - fh);
+    ctx.bezierCurveTo(x+fw, tipY-fh*0.5, x+fw*0.7, tipY+2, x, tipY+2);
+    ctx.bezierCurveTo(x-fw*0.7, tipY+2, x-fw, tipY-fh*0.5, x, tipY-fh);
+    ctx.fillStyle = fc.outer;
+    ctx.fill();
+
+    // inner bright
+    ctx.beginPath();
+    ctx.moveTo(x, tipY - fh*0.85);
+    ctx.bezierCurveTo(x+fw*0.4, tipY-fh*0.4, x+fw*0.3, tipY, x, tipY);
+    ctx.bezierCurveTo(x-fw*0.3, tipY, x-fw*0.4, tipY-fh*0.4, x, tipY-fh*0.85);
+    ctx.fillStyle = fc.inner;
+    ctx.fill();
   }
 
-  const ytScript = document.createElement('script');
-  ytScript.src = "https://www.youtube.com/iframe_api";
-  document.head.appendChild(ytScript);
-
-  /* ================= sound toggle (also doubles as a manual play fallback) ================= */
-  document.getElementById('soundToggle').addEventListener('click', () => {
-    if(!ytPlayer) return;
-    const isPlaying = ytPlayer.getPlayerState() === 1; // YT.PlayerState.PLAYING
-    if(!isPlaying){
-      musicStarted = true;
-      ytPlayer.unMute();
-      ytPlayer.seekTo(START_SECONDS);
-      ytPlayer.playVideo();
-      isMuted = false;
-      document.getElementById('soundToggle').textContent = '🔊';
-      return;
+  function drawFrosting(ctx, x, y, w, h, color){
+    ctx.beginPath();
+    ctx.moveTo(x, y+h);
+    const drips = Math.floor(w/20);
+    for(let i=0;i<=drips;i++){
+      const dx = x + (i/drips)*w;
+      const dy = y + h + Math.sin(i*2.4)*4 + 4;
+      if(i===0) ctx.lineTo(dx,y);
+      ctx.bezierCurveTo(dx-8, y, dx-4, dy, dx, dy);
+      ctx.bezierCurveTo(dx+4, dy, dx+8, y, dx+(w/drips*0.5), y);
     }
-    isMuted = !isMuted;
-    if(isMuted){ ytPlayer.mute(); document.getElementById('soundToggle').textContent = '🔇'; }
-    else { ytPlayer.unMute(); document.getElementById('soundToggle').textContent = '🔊'; }
-  });
-</script>
+    ctx.lineTo(x+w, y);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
 
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function lighten(hex, amt){
+    const n = parseInt(hex.slice(1),16);
+    const r=Math.min(255,((n>>16)&0xff)+amt);
+    const g=Math.min(255,((n>>8)&0xff)+amt);
+    const b=Math.min(255,(n&0xff)+amt);
+    return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+  }
+
+  function loop(t){
+    drawCake(t);
+    cakeRaf = requestAnimationFrame(loop);
+  }
+  cakeRaf = requestAnimationFrame(loop);
+
+  // tap the cake / canvas to blow a candle
+  document.getElementById('cakeCanvas').addEventListener('click', (e)=>{
+    blowOneCandle();
+  });
+
+  // microphone blow detection
+  startMicListen();
+}
+
+function blowOneCandle(){
+  const litIdx = candleStates.reduce((acc,v,i)=> (v ? [...acc,i] : acc), []);
+  if(litIdx.length === 0) return;
+  const pick = litIdx[Math.floor(Math.random()*litIdx.length)];
+  candleStates[pick] = false;
+  checkAllBlown();
+}
+
+function blowAllCandles(){
+  candleStates = Array(NUM_CANDLES).fill(false);
+  checkAllBlown();
+}
+
+function checkAllBlown(){
+  const allOut = candleStates.every(v=>!v);
+  if(allOut && candlesLit){
+    candlesLit = false;
+    document.getElementById('candleGlow').style.animation = 'none';
+    document.getElementById('candleGlow').style.opacity = '0';
+    setTimeout(()=>{
+      document.getElementById('blowHint').classList.add('hidden');
+      const msg = document.getElementById('blownMsg');
+      msg.classList.add('show');
+      document.getElementById('btnAfterCake').style.display = 'inline-block';
+      launchConfetti();
+    }, 400);
+  }
+}
+
+async function startMicListen(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    micStream = stream;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    let blowCooldown = 0;
+
+    blowDetectInterval = setInterval(()=>{
+      if(!candlesLit) return;
+      analyser.getByteFrequencyData(dataArray);
+      // sum low-frequency energy (breath is low freq)
+      let sum = 0;
+      for(let i=0;i<40;i++) sum += dataArray[i];
+      const avg = sum/40;
+      if(avg > 90 && blowCooldown <= 0){
+        blowOneCandle();
+        blowCooldown = 18;
+      }
+      if(blowCooldown>0) blowCooldown--;
+    }, 80);
+  } catch(e){
+    // mic not available — tap-to-blow works instead
+    console.log('Mic not available, tap-to-blow mode');
+  }
+}
+
+/* ================= confetti ================= */
+const confCanvas = document.getElementById('confettiCanvas');
+const confCtx = confCanvas.getContext('2d');
+let confPieces = [];
+let confRaf = null;
+
+function launchConfetti(){
+  confCanvas.width = window.innerWidth;
+  confCanvas.height = window.innerHeight;
+  confPieces = [];
+  const colors = ['#C9A227','#E84855','#C98298','#7C8FC9','#6FA876','#fff','#F9A826'];
+  for(let i=0;i<160;i++){
+    confPieces.push({
+      x: Math.random()*confCanvas.width,
+      y: -10 - Math.random()*200,
+      vx: (Math.random()-0.5)*4,
+      vy: 2 + Math.random()*4,
+      size: 6 + Math.random()*8,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      rot: Math.random()*Math.PI*2,
+      rotV: (Math.random()-0.5)*0.18,
+      shape: Math.random()<0.5?'rect':'circle',
+      life: 1,
+    });
+  }
+  if(confRaf) cancelAnimationFrame(confRaf);
+  animateConfetti();
+}
+
+function animateConfetti(){
+  confCtx.clearRect(0,0,confCanvas.width,confCanvas.height);
+  let alive = false;
+  confPieces.forEach(p=>{
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.06; // gravity
+    p.rot += p.rotV;
+    p.life -= 0.006;
+    if(p.y < confCanvas.height + 20 && p.life > 0) alive = true;
+    confCtx.save();
+    confCtx.globalAlpha = Math.max(0, p.life);
+    confCtx.translate(p.x, p.y);
+    confCtx.rotate(p.rot);
+    confCtx.fillStyle = p.color;
+    if(p.shape==='rect'){
+      confCtx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+    } else {
+      confCtx.beginPath();
+      confCtx.arc(0,0,p.size/2,0,Math.PI*2);
+      confCtx.fill();
+    }
+    confCtx.restore();
+  });
+  if(alive) confRaf = requestAnimationFrame(animateConfetti);
+  else confCtx.clearRect(0,0,confCanvas.width,confCanvas.height);
+}
+
+/* ================= background music ================= */
+const VIDEO_ID = '2Vv-BfVoq4g';
+const START_SECONDS = 14;
+let ytPlayer = null;
+let ytReady = false;
+let musicStarted = false;
+let isMuted = false;
+
+function onYouTubeIframeAPIReady(){
+  ytPlayer = new YT.Player('yt-player', {
+    height: '2', width: '2',
+    videoId: VIDEO_ID,
+    playerVars: { autoplay:0, controls:0, modestbranding:1, rel:0, loop:1, playlist:VIDEO_ID, start:START_SECONDS },
+    events: {
+      onReady: () => {
+        ytReady = true;
+        if(musicStarted){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
+      },
+      onStateChange: (e) => {
+        if(e.data === YT.PlayerState.ENDED){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
+      }
+    }
+  });
+}
+window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+function startMusicOnce(){
+  if(musicStarted) return;
+  musicStarted = true;
+  if(ytReady && ytPlayer){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
+}
+
+const ytScript = document.createElement('script');
+ytScript.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(ytScript);
+
+document.getElementById('soundToggle').addEventListener('click', () => {
+  if(!ytPlayer) return;
+  const isPlaying = ytPlayer.getPlayerState() === 1;
+  if(!isPlaying){
+    musicStarted = true;
+    ytPlayer.unMute();
+    ytPlayer.seekTo(START_SECONDS);
+    ytPlayer.playVideo();
+    isMuted = false;
+    document.getElementById('soundToggle').textContent = '🔊';
+    return;
+  }
+  isMuted = !isMuted;
+  if(isMuted){ ytPlayer.mute(); document.getElementById('soundToggle').textContent = '🔇'; }
+  else { ytPlayer.unMute(); document.getElementById('soundToggle').textContent = '🔊'; }
+});
+</script>
 </body>
 </html>
