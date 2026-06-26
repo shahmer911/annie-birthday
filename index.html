@@ -400,6 +400,9 @@
 
 <button id="soundToggle" aria-label="mute or unmute music">🔊</button>
 
+<!-- hidden youtube audio player (official embed) -->
+<div id="yt-player" style="position:fixed; width:2px; height:2px; opacity:0; pointer-events:none; bottom:0; left:0;"></div>
+
 <script>
   /* ================= cute cat sticker (original illustration) ================= */
   const CAT_SVG = `
@@ -537,98 +540,68 @@
   });
 
   /* ================= background music (original, self-contained, no external file) =================
-     A small original instrumental loop, generated live with the Web Audio API.
-     No third-party player, no network request, no ads, nothing to buffer —
-     it starts the instant she taps the lock screen and loops for as long as
-     the tab stays open. */
-  let audioCtx = null;
-  let masterGain = null;
+     We use YouTube's official embeddable player (not a hosted copy of the audio),
+     cued to start right at "I found a love, for me..." instead of the song's
+     short instrumental intro. When it loops, it jumps back to that same line
+     rather than restarting from 0:00. */
+  const VIDEO_ID = '2Vv-BfVoq4g'; // Ed Sheeran - Perfect (Official Music Video)
+  const START_SECONDS = 10; // best estimate of where "I found a love, for me" begins — tell me if this needs nudging
+  let ytPlayer = null;
+  let ytReady = false;
   let musicStarted = false;
   let isMuted = false;
-  const BASE_VOLUME = 0.22;
 
-  const CHORDS = [
-    { notes: [220.00, 261.63, 329.63] }, // A minor
-    { notes: [174.61, 220.00, 261.63] }, // F major
-    { notes: [261.63, 329.63,392.00] }, // C major
-    { notes: [196.00, 246.94, 293.66] }, // G major
-  ];
-  const CHORD_DUR = 3.0;               // seconds per chord
-  const LOOP_DUR = CHORD_DUR * CHORDS.length;
-  const ARP_PATTERN = [0, 1, 2, 1, 0, 2];
-
-  function ensureAudioContext(){
-    if(audioCtx) return;
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const lowpass = audioCtx.createBiquadFilter();
-    lowpass.type = 'lowpass';
-    lowpass.frequency.value = 2600;
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = BASE_VOLUME;
-    masterGain.connect(lowpass);
-    lowpass.connect(audioCtx.destination);
-  }
-
-  function playPad(freq, startTime, duration){
-    const osc = audioCtx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.0001, startTime);
-    g.gain.linearRampToValueAtTime(0.16, startTime + 0.9);
-    g.gain.linearRampToValueAtTime(0.0001, startTime + duration);
-    osc.connect(g);
-    g.connect(masterGain);
-    osc.start(startTime);
-    osc.stop(startTime + duration + 0.1);
-  }
-
-  function playPluck(freq, startTime){
-    const osc = audioCtx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.15, startTime);
-    g.gain.exponentialRampToValueAtTime(0.001, startTime + 0.55);
-    osc.connect(g);
-    g.connect(masterGain);
-    osc.start(startTime);
-    osc.stop(startTime + 0.6);
-  }
-
-  function scheduleLoop(){
-    const loopStart = audioCtx.currentTime + 0.05;
-    CHORDS.forEach((chord, i) => {
-      const chordStart = loopStart + i * CHORD_DUR;
-      chord.notes.forEach(freq => playPad(freq, chordStart, CHORD_DUR + 0.4));
-      ARP_PATTERN.forEach((idx, step) => {
-        playPluck(chord.notes[idx] * 2, chordStart + step * 0.5);
-      });
+  function onYouTubeIframeAPIReady(){
+    ytPlayer = new YT.Player('yt-player', {
+      height: '2',
+      width: '2',
+      videoId: VIDEO_ID,
+      playerVars: {
+        autoplay: 0, controls: 0, modestbranding: 1, rel: 0,
+        loop: 1, playlist: VIDEO_ID, start: START_SECONDS
+      },
+      events: {
+        onReady: () => {
+          ytReady = true;
+          if(musicStarted){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
+        },
+        onStateChange: (e) => {
+          if(e.data === YT.PlayerState.ENDED){
+            ytPlayer.seekTo(START_SECONDS);
+            ytPlayer.playVideo();
+          }
+        }
+      }
     });
-    loopTimer = setTimeout(scheduleLoop, LOOP_DUR * 1000);
   }
-  let loopTimer = null;
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
 
   function startMusicOnce(){
     if(musicStarted) return;
     musicStarted = true;
-    ensureAudioContext();
-    if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
-    scheduleLoop();
+    if(ytReady && ytPlayer){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
   }
 
-  /* ================= sound toggle ================= */
+  const ytScript = document.createElement('script');
+  ytScript.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(ytScript);
+
+  /* ================= sound toggle (also doubles as a manual play fallback) ================= */
   document.getElementById('soundToggle').addEventListener('click', () => {
-    ensureAudioContext();
-    if(!musicStarted){
-      startMusicOnce();
+    if(!ytPlayer) return;
+    const isPlaying = ytPlayer.getPlayerState() === 1; // YT.PlayerState.PLAYING
+    if(!isPlaying){
+      musicStarted = true;
+      ytPlayer.unMute();
+      ytPlayer.seekTo(START_SECONDS);
+      ytPlayer.playVideo();
+      isMuted = false;
       document.getElementById('soundToggle').textContent = '🔊';
       return;
     }
-    if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
     isMuted = !isMuted;
-    masterGain.gain.value = isMuted ? 0 : BASE_VOLUME;
-    document.getElementById('soundToggle').textContent = isMuted ? '🔇' : '🔊';
+    if(isMuted){ ytPlayer.mute(); document.getElementById('soundToggle').textContent = '🔇'; }
+    else { ytPlayer.unMute(); document.getElementById('soundToggle').textContent = '🔊'; }
   });
 </script>
 
