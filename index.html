@@ -187,27 +187,18 @@
   .cat-br{ width:96px; height:96px; bottom:-30px; right:-30px; transform:rotate(10deg) scaleX(-1); }
   .cat-mid{ width:64px; height:64px; top:-22px; right:18px; transform:rotate(16deg); }
 
-  .song-card{
-    display:flex; align-items:center; gap:14px;
-    background:#fff; border:1px solid var(--line); border-radius:14px;
-    padding:12px 16px; margin:18px auto 4px; max-width:380px;
-    text-decoration:none; color:var(--ink); text-align:left;
-    transition:transform .15s, box-shadow .15s;
+  /* sound toggle */
+  #soundToggle{
+    position:fixed; bottom:18px; right:18px; z-index:50;
+    width:44px; height:44px; border-radius:50%;
+    background:var(--ink); color:var(--paper); border:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; opacity:0; visibility:hidden;
+    transition:opacity .4s, transform .15s;
+    box-shadow:0 4px 14px rgba(0,0,0,.3); cursor:pointer;
   }
-  .song-card:hover{ transform:translateY(-1px); box-shadow:0 6px 16px rgba(168,87,112,.18); }
-  .song-art{
-    width:38px; height:38px; border-radius:50%; flex:none;
-    background:linear-gradient(135deg, var(--rose), var(--gold));
-    display:flex; align-items:center; justify-content:center; font-size:16px;
-  }
-  .song-meta{ flex:1; display:flex; flex-direction:column; min-width:0; }
-  .song-title{ font-size:14px; font-weight:600; }
-  .song-artist{ font-size:12px; color:var(--rose-deep); }
-  .song-play{
-    flex:none; width:32px; height:32px; border-radius:50%;
-    border:1.5px solid var(--rose-deep); color:var(--rose-deep);
-    display:flex; align-items:center; justify-content:center; font-size:12px;
-  }
+  #soundToggle.show{ opacity:1; visibility:visible; }
+  #soundToggle:active{ transform:scale(.92); }
 
   /* ================= POEMS SCREEN ================= */
   #screen-poems{ background:var(--night-soft); }
@@ -347,15 +338,6 @@
         You have this way of making ordinary moments feel a little brighter, and even on
         days when you don't see it yourself, you leave a mark on the people around you.
       </p>
-
-      <a class="song-card" id="songLink" href="https://www.youtube.com/watch?v=2Vv-BfVoq4g&t=10s" target="_blank" rel="noopener">
-        <span class="song-art">🎵</span>
-        <span class="song-meta">
-          <span class="song-title">Perfect</span>
-          <span class="song-artist">Ed Sheeran — tap to play</span>
-        </span>
-        <span class="song-play">▶</span>
-      </a>
 
       <div class="slide-step">1 / 3</div>
       <button class="btn-continue" data-next="screen-wish-2">continue</button>
@@ -541,6 +523,12 @@
   </section>
 
 </div>
+
+<!-- sound toggle button -->
+<button id="soundToggle" aria-label="mute or unmute music">🔊</button>
+
+<!-- hidden YouTube audio player — starts at "I found a love, for me" (0:14) -->
+<div id="yt-player" style="position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;bottom:0;left:0;"></div>
 
 <script>
   /* ================= cute cat sticker (original illustration) ================= */
@@ -736,6 +724,90 @@
     card.addEventListener('keydown', (e) => {
       if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
     });
+  });
+
+  /* =================  BACKGROUND MUSIC  =================
+     Ed Sheeran — Perfect (official YouTube embed).
+     START_SECONDS = 14  →  "I found a love, for me" begins
+     exactly when the lock screen opens.                    */
+  const VIDEO_ID    = '2Vv-BfVoq4g';
+  const START_SECONDS = 14; // 0:14 = "I found a love, for me"
+  let ytPlayer      = null;
+  let ytReady       = false;
+  let musicStarted  = false;
+  let isMuted       = false;
+
+  function onYouTubeIframeAPIReady(){
+    ytPlayer = new YT.Player('yt-player', {
+      height:'2', width:'2',
+      videoId: VIDEO_ID,
+      playerVars:{
+        autoplay:0, controls:0, modestbranding:1,
+        rel:0, loop:1, playlist:VIDEO_ID, start:START_SECONDS
+      },
+      events:{
+        onReady(){ ytReady = true; if(musicStarted){ _play(); } },
+        onStateChange(e){
+          if(e.data === YT.PlayerState.ENDED){ _play(); }
+        }
+      }
+    });
+  }
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+  function _play(){ ytPlayer.seekTo(START_SECONDS); ytPlayer.playVideo(); }
+
+  function startMusicOnce(){
+    if(musicStarted) return;
+    musicStarted = true;
+    if(ytReady && ytPlayer){ _play(); }
+  }
+
+  // inject YouTube IFrame API script
+  (function(){
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(s);
+  })();
+
+  // ---- hook into keypad: first tap = user gesture → start music ----
+  document.getElementById('keypad').addEventListener('click', startMusicOnce, { once:true });
+
+  // ---- show sound toggle after unlock ----
+  const _origUnlock = unlock; // reference already-defined unlock
+  // patch pressKey to also reveal toggle on correct entry
+  const _origCheckCode = checkCode;
+  // override unlock to show the toggle
+  function unlock(){
+    lockError.style.opacity = 0;
+    document.getElementById('screen-lock').classList.add('screen-exit');
+    setTimeout(() => {
+      document.getElementById('screen-lock').classList.remove('active','screen-exit');
+      showScreen('screen-wish-1');
+      document.getElementById('soundToggle').classList.add('show');
+    }, 650);
+  }
+  // re-wire checkCode to use the new unlock
+  function checkCode(){
+    if(entered === PASSCODE){ unlock(); } else { wrongCode(); }
+  }
+
+  // ---- sound toggle button ----
+  document.getElementById('soundToggle').addEventListener('click', () => {
+    if(!ytPlayer) return;
+    const playing = ytPlayer.getPlayerState() === 1;
+    if(!playing){
+      // manual play fallback (autoplay blocked)
+      musicStarted = true;
+      ytPlayer.unMute();
+      _play();
+      isMuted = false;
+      document.getElementById('soundToggle').textContent = '🔊';
+      return;
+    }
+    isMuted = !isMuted;
+    if(isMuted){ ytPlayer.mute();   document.getElementById('soundToggle').textContent = '🔇'; }
+    else        { ytPlayer.unMute(); document.getElementById('soundToggle').textContent = '🔊'; }
   });
 </script>
 
